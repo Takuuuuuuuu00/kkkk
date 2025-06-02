@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>60言ったら負けゲーム - vs コンピューター</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+      margin: 0;
+      background: #f9f9f9;
+    }
+    .number {
+      font-size: 2rem;
+      margin: 20px;
+    }
+    button {
+      font-size: 1.2rem;
+      margin: 10px;
+      padding: 14px 24px;
+      border: none;
+      border-radius: 8px;
+      background-color: #007BFF;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    input[type="text"] {
+      font-size: 1rem;
+      padding: 8px;
+      width: 80%;
+      max-width: 300px;
+    }
+    #gameArea {
+      margin-top: 20px;
+    }
+    #log {
+      max-width: 500px;
+      margin: 0 auto;
+      text-align: left;
+    }
+    @media (max-width: 600px) {
+      .number {
+        font-size: 1.5rem;
+      }
+      button {
+        font-size: 1rem;
+        padding: 12px 20px;
+        width: 80%;
+        max-width: 300px;
+      }
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>60言ったら負けゲーム</h1>
+
+  <div id="nameInput">
+    <p>プレイヤーの名前: <input type="text" id="name1"></p>
+    <button onclick="startGame()">ゲーム開始</button>
+  </div>
+
+  <div id="gameArea" class="hidden">
+    <p id="turn"></p>
+    <div class="number" id="number">現在の数字: 0</div>
+    <div>
+      <button onclick="playerPlay(1)">1個</button>
+      <button onclick="playerPlay(2)">2個</button>
+      <button onclick="playerPlay(3)">3個</button>
+    </div>
+    <p id="primeCountDisplay"></p>
+    <p id="log"></p>
+  </div>
+
+  <script>
+    let currentNumber = 0;
+    let turn = 0; // 0: プレイヤー, 1: コンピューター
+    let primeCount = [0, 0];
+    let playerNames = ["プレイヤー", "コンピューター"];
+
+    function isPrime(n) {
+      if (n < 2) return false;
+      for (let i = 2; i <= Math.sqrt(n); i++) {
+        if (n % i === 0) return false;
+      }
+      return true;
+    }
+
+    function startGame() {
+      const name1 = document.getElementById("name1").value.trim();
+      playerNames[0] = name1 || "プレイヤー";
+
+      document.getElementById("nameInput").classList.add("hidden");
+      document.getElementById("gameArea").classList.remove("hidden");
+      updateDisplay();
+    }
+
+    function updateDisplay() {
+      document.getElementById("turn").textContent = `${playerNames[turn]}の番です`;
+      document.getElementById("number").textContent = "現在の数字: " + currentNumber;
+      document.getElementById("primeCountDisplay").innerHTML =
+        `${playerNames[0]}（素数: ${primeCount[0]}回）<br>${playerNames[1]}（素数: ${primeCount[1]}回）`;
+    }
+
+    function playerPlay(count) {
+      if (turn !== 0) return;
+      playTurn(count);
+    }
+
+    function computerPlay() {
+      let bestChoice = 1;
+      let bestScore = -Infinity;
+
+      for (let i = 1; i <= 3; i++) {
+        let temp = currentNumber + i;
+        if (temp > 60) continue;
+
+        // プレイヤーに渡る数字候補
+        let nextChoices = [temp + 1, temp + 2, temp + 3];
+        let playerPrimes = nextChoices.filter(n => n <= 60 && isPrime(n)).length;
+        let selfPrime = isPrime(temp) ? 1 : 0;
+
+        // スコア評価：相手に素数多く、自分少なく
+        let score = playerPrimes - selfPrime;
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestChoice = i;
+        }
+      }
+
+      setTimeout(() => playTurn(bestChoice), 1000);
+    }
+
+    function playTurn(count) {
+      let logText = "";
+      for (let i = 1; i <= count; i++) {
+        currentNumber++;
+        let player = turn;
+        let primeMark = "";
+
+        if (isPrime(currentNumber)) {
+          primeCount[player]++;
+          primeMark = "（素数）";
+        }
+
+        logText += `${playerNames[player]}: ${currentNumber}${primeMark}<br>`;
+
+        if (currentNumber === 60) {
+          document.getElementById("log").innerHTML += logText;
+          alert(`${playerNames[player]}の負けです！（60を言った）`);
+          reset();
+          return;
+        }
+
+        if (primeCount[player] >= 10) {
+          document.getElementById("log").innerHTML += logText;
+          alert(`${playerNames[player]}の負けです！（素数を10回言った）`);
+          reset();
+          return;
+        }
+      }
+
+      document.getElementById("log").innerHTML += logText;
+      turn = 1 - turn;
+      updateDisplay();
+
+      if (turn === 1) {
+        computerPlay();
+      }
+    }
+
+    function reset() {
+      currentNumber = 0;
+      turn = 0;
+      primeCount = [0, 0];
+      document.getElementById("log").innerHTML = "";
+      updateDisplay();
+    }
+  </script>
+</body>
+</html>
+
+
